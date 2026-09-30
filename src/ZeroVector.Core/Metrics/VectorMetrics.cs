@@ -247,6 +247,28 @@ namespace ZeroVector.Core.Metrics
         }
 
         /// <summary>
+        /// Computes the bitwise Hamming distance between two 64-bit word buffers (e.g. 1-bit quantized vector embeddings).
+        /// Uses 64-bit hardware POPCNT instructions for maximum throughput.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int HammingDistance(ReadOnlySpan<ulong> a, ReadOnlySpan<ulong> b)
+        {
+            if (a.Length != b.Length)
+                throw new ArgumentException($"Buffer lengths must match: a={a.Length}, b={b.Length}");
+
+            int len = a.Length;
+            if (len == 0) return 0;
+
+            int totalDistance = 0;
+            for (int i = 0; i < len; i++)
+            {
+                totalDistance += PopCount64(a[i] ^ b[i]);
+            }
+
+            return totalDistance;
+        }
+
+        /// <summary>
         /// Computes the bitwise Hamming distance between two byte buffers (e.g. 256-bit ORB/BRIEF binary descriptors).
         /// Uses 64-bit hardware POPCNT instructions for maximum throughput.
         /// </summary>
@@ -408,7 +430,7 @@ namespace ZeroVector.Core.Metrics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int PopCount64(ulong value)
+        public static int PopCount64(ulong value)
         {
 #if NET8_0_OR_GREATER
             return BitOperations.PopCount(value);
@@ -421,7 +443,7 @@ namespace ZeroVector.Core.Metrics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int PopCountByte(byte value)
+        public static int PopCountByte(byte value)
         {
 #if NET8_0_OR_GREATER
             return BitOperations.PopCount(value);
